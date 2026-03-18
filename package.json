@@ -1,0 +1,27 @@
+{
+  "name": "confluence-utils",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "read-excel": "node src/scriptMainTestExcel.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ikaschenko/confluence-utils.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ikaschenko/confluence-utils/issues"
+  },
+  "homepage": "https://github.com/ikaschenko/confluence-utils#readme",
+  "dependencies": {
+    "axios": "^1.13.6",
+    "cheerio": "^1.2.0",
+    "xlsx": "^0.18.5"
+  }
+}

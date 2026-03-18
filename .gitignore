@@ -1,4 +1,3 @@
 src/config.local.js
 out
-src.zip
-
+node_modules

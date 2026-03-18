@@ -3,6 +3,9 @@ module.exports = {
   parentPageId: "",
   apiToken: "",
   email: "",
+  excelFilePath: "",
+  columnEpic: "",
+  columnStory: "",
   normLen: 50,
   extractRules: [
     {

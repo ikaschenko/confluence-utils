@@ -1,4 +1,12 @@
-const REQUIRED_STRING_FIELDS = ["baseUrl", "parentPageId", "apiToken", "email"];
+const REQUIRED_STRING_FIELDS = [
+  "baseUrl",
+  "parentPageId",
+  "apiToken",
+  "email",
+  "excelFilePath",
+  "columnEpic",
+  "columnStory"
+];
 
 function loadLocalConfig() {
   try {
