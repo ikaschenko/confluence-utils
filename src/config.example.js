@@ -1,11 +1,12 @@
 module.exports = {
   baseUrl: "",
-  parentPageId: "",
+  confluencePageId: "",
   apiToken: "",
   email: "",
   excelFilePath: "",
   columnEpic: "",
   columnStory: "",
+  outDir: "",
   normLen: 50,
   extractRules: [
     {

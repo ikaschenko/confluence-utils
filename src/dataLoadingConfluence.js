@@ -1,57 +1,10 @@
-const axios = require("axios");
 const cheerio = require("cheerio");
+const { createClient } = require("./confluenceClient");
 
 const dataFromConfluence = [];
 
 let config;
-let headers;
-
-function initialize(configFromCaller) {
-  config = configFromCaller;
-  headers = {
-    Authorization: `Bearer ${config.apiToken}`,
-    Accept: "application/json"
-  };
-}
-
-async function getChildPages(parentId) {
-  let results = [];
-  let start = 0;
-  const limit = 50;
-
-  while (true) {
-    const response = await axios.get(
-      `${config.baseUrl}/rest/api/content/${parentId}/child/page`,
-      {
-        headers,
-        params: { start, limit }
-      }
-    );
-
-    const pages = response.data.results;
-    results = results.concat(pages);
-
-    if (pages.length < limit) {
-      break;
-    }
-
-    start += limit;
-  }
-
-  return results;
-}
-
-async function getPageContent(pageId) {
-  const response = await axios.get(
-    `${config.baseUrl}/rest/api/content/${pageId}`,
-    {
-      headers,
-      params: { expand: "body.storage" }
-    }
-  );
-
-  return response.data.body.storage.value;
-}
+let client;
 
 function extractBetween(text, startMarker, endMarker, cutOffHeader) {
   const startIndex = text.indexOf(startMarker);
@@ -128,12 +81,12 @@ function addNormalizedAliases(extractedValues) {
 }
 
 async function crawl(parentId) {
-  const children = await getChildPages(parentId);
+  const children = await client.getChildPages(parentId);
 
   for (const page of children) {
     console.log("Checking sub-page:", page.title);
 
-    const html = await getPageContent(page.id);
+    const html = await client.getPageContent(page.id);
     const extractedValues = addNormalizedAliases(extractValues(html));
     const adoLinks = extractAdoLinks(html);
 
@@ -148,10 +101,11 @@ async function crawl(parentId) {
 }
 
 async function loadDataFromConfluence(configFromCaller) {
-  initialize(configFromCaller);
+  config = configFromCaller;
+  client = createClient(config);
   dataFromConfluence.length = 0;
 
-  await crawl(config.parentPageId);
+  await crawl(config.confluencePageId);
 
   return dataFromConfluence;
 }

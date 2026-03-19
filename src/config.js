@@ -1,8 +1,11 @@
-const REQUIRED_STRING_FIELDS = [
+const BASE_REQUIRED_FIELDS = [
   "baseUrl",
-  "parentPageId",
+  "confluencePageId",
   "apiToken",
-  "email",
+  "email"
+];
+
+const EXCEL_REQUIRED_FIELDS = [
   "excelFilePath",
   "columnEpic",
   "columnStory"
@@ -26,14 +29,18 @@ function loadLocalConfig() {
   }
 }
 
-function getConfigValidationErrors(config) {
+function getConfigValidationErrors(config, { requireExcel = true } = {}) {
   const errors = [];
 
   if (!config || typeof config !== "object" || Array.isArray(config)) {
     return ["CONFIG must export an object."];
   }
 
-  for (const field of REQUIRED_STRING_FIELDS) {
+  const requiredFields = requireExcel
+    ? [...BASE_REQUIRED_FIELDS, ...EXCEL_REQUIRED_FIELDS]
+    : BASE_REQUIRED_FIELDS;
+
+  for (const field of requiredFields) {
     if (typeof config[field] !== "string" || config[field].trim() === "") {
       errors.push(`CONFIG.${field} must be a non-empty string.`);
     }
@@ -90,9 +97,9 @@ function formatConfigErrorMessage(validationErrors, localFileFound) {
   return lines.join("\n");
 }
 
-function loadConfig() {
+function loadConfig({ requireExcel = true } = {}) {
   const { config, localFileFound } = loadLocalConfig();
-  const validationErrors = getConfigValidationErrors(config);
+  const validationErrors = getConfigValidationErrors(config, { requireExcel });
 
   if (!localFileFound || validationErrors.length > 0) {
     throw new Error(formatConfigErrorMessage(validationErrors, localFileFound));
