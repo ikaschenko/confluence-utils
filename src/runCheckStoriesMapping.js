@@ -118,6 +118,52 @@ function compareConfluenceAndExcel(confluenceItems, excelItems) {
   };
 }
 
+function extractStoryPrefix(title) {
+  const match = normalizeText(title).match(/^([A-Za-z]+(?:\([A-Za-z]\))?-[\d.]+)/);
+  return match ? match[1] : "";
+}
+
+function hasNoKeyData(item) {
+  const storyId = extractStoryPrefix(item.title);
+  const frdId = getConfluenceFrdId(item);
+  const hasAdoLinks = Array.isArray(item.adoLinks) && item.adoLinks.length > 0;
+  return storyId === "" && frdId === "" && !hasAdoLinks;
+}
+
+function escapeCsvValue(value) {
+  const str = String(value ?? "");
+  if (str.includes(",") || str.includes('"') || str.includes("\n") || str.includes("\r")) {
+    return '"' + str.replace(/"/g, '""') + '"';
+  }
+  return str;
+}
+
+function printConfluenceDataAsCsv(confluenceItems) {
+  if (confluenceItems.length === 0) {
+    return;
+  }
+
+  // Derive columns from the first item's keys.
+  // "title" becomes the "User Story id" column; "FrdId" is a duplicate alias of "FRD ID" so it is skipped.
+  const skipKeys = new Set(["title", "FrdId"]);
+  const firstItem = confluenceItems[0];
+  const columnKeys = Object.keys(firstItem).filter(k => !skipKeys.has(k));
+  const headers = ["User Story id", ...columnKeys.map(k => (k === "adoLinks" ? "ADO Links" : k))];
+
+  console.log("");
+  console.log("Confluence data (CSV):");
+  console.log(headers.map(escapeCsvValue).join(","));
+
+  for (const item of confluenceItems) {
+    const storyId = extractStoryPrefix(item.title);
+    const rowValues = columnKeys.map(k => {
+      const val = item[k];
+      return Array.isArray(val) ? val.join("; ") : (val ?? "");
+    });
+    console.log([storyId, ...rowValues].map(escapeCsvValue).join(","));
+  }
+}
+
 function printDataStructure(title, data) {
   console.log("");
   console.log(title);
@@ -145,9 +191,11 @@ function printComparisonResults(comparisonResults) {
     ensureExcelFileIsReadable(config.excelFilePath);
 
     await loadDataFromConfluence(config);
+    dataFromConfluence.splice(0, dataFromConfluence.length, ...dataFromConfluence.filter(item => !hasNoKeyData(item)));
     loadDataFromExcel(config);
 
     printDataStructure("dataFromConfluence", dataFromConfluence);
+    printConfluenceDataAsCsv(dataFromConfluence);
     printDataStructure("dataFromExcel", dataFromExcel);
 
     printComparisonResults(compareConfluenceAndExcel(dataFromConfluence, dataFromExcel));

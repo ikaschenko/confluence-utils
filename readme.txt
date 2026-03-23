@@ -1,6 +1,6 @@
 To launch the current most usable script: 
 
-> node ./src/runFull.js >./out/ec-20260315.txt
+> node ./src/runCheckStoriesMapping.js >./out/ec-20260315.txt
 
 To export Confluence pages as Markdown:
 
