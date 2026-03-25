@@ -83,7 +83,10 @@ function compareConfluenceAndExcel(confluenceItems, excelItems) {
       continue;
     }
 
-    const epicStories = excelStoriesByEpic.get(frdId) ?? [];
+    const epicStories =
+      excelStoriesByEpic.get(frdId) ??
+      [...excelStoriesByEpic.entries()].find(([epicKey]) => frdId.includes(epicKey))?.[1] ??
+      [];
     const matchedStory = epicStories.find(storyEntry => title.startsWith(storyEntry.story));
 
     if (matchedStory) {
