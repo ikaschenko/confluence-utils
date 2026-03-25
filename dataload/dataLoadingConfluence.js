@@ -1,5 +1,5 @@
 const cheerio = require("cheerio");
-const { createClient } = require("../dataload/confluenceClient");
+const { createClient } = require("./confluenceClient");
 
 const dataFromConfluence = [];
 

@@ -1,7 +1,8 @@
 const fs = require("fs");
-const { loadConfig } = require("./config");
-const { dataFromConfluence, loadDataFromConfluence } = require("./dataLoadingConfluence");
-const { dataFromExcel, loadDataFromExcel } = require("./dataLoadingExcel");
+const { loadConfig } = require("../config/config");
+const { dataFromConfluence, loadDataFromConfluence } = require("../dataload/dataLoadingConfluence");
+const { dataFromExcel, loadDataFromExcel } = require("../dataload/dataLoadingExcel");
+const { createAdoClient } = require("../dataload/dataLoadingADO");
 
 function ensureExcelFileIsReadable(excelFilePath) {
   try {
@@ -22,7 +23,7 @@ function isExcelStoryCode(value) {
 }
 
 function getConfluenceFrdId(item) {
-  return normalizeText(item.FrdId ?? item["FRD ID"]);
+  return normalizeText(item.frdId ?? item["FRD ID"]);
 }
 
 function buildExcelStoryEntries(excelItems) {
@@ -69,6 +70,49 @@ function groupExcelStoriesByEpic(excelStoryEntries) {
   return storiesByEpic;
 }
 
+async function enrichAdoLinks(confluenceItems, config) {
+  const allLinks = confluenceItems.flatMap(item =>
+    Array.isArray(item.adoLinks) ? item.adoLinks : []
+  );
+  const uniqueLinks = [...new Set(allLinks)];
+
+  if (uniqueLinks.length === 0) {
+    return;
+  }
+
+  if (!config.adoPat) {
+    console.log("ADO PAT not configured — skipping ADO state enrichment.");
+    return;
+  }
+
+  console.log(`Fetching ADO states for ${uniqueLinks.length} work item(s)...`);
+  const adoClient = createAdoClient(config);
+  const stateByLink = new Map();
+
+  for (const link of uniqueLinks) {
+    try {
+      const item = await adoClient.getWorkItemByUrl(link);
+      stateByLink.set(link, item.state);
+    } catch (error) {
+      const msg = error.response
+        ? `HTTP ${error.response.status}`
+        : error.message;
+      console.warn(`  Warning: could not fetch state for ${link}: ${msg}`);
+      stateByLink.set(link, "");
+    }
+  }
+
+  for (const item of confluenceItems) {
+    if (!Array.isArray(item.adoLinks)) {
+      continue;
+    }
+    item.adoLinks = item.adoLinks.map(link => ({
+      link,
+      status: stateByLink.get(link) || ""
+    }));
+  }
+}
+
 function compareConfluenceAndExcel(confluenceItems, excelItems) {
   const excelStoryEntries = buildExcelStoryEntries(excelItems);
   const excelStoriesByEpic = groupExcelStoriesByEpic(excelStoryEntries);
@@ -92,7 +136,7 @@ function compareConfluenceAndExcel(confluenceItems, excelItems) {
     if (matchedStory) {
       alreadyAddedInExcel.push({
         title,
-        FrdId: frdId,
+        frdId: frdId,
         adoLinks: item.adoLinks || [],
         excelStory: matchedStory.story,
         excelRowNumber: matchedStory.rowNumber
@@ -109,7 +153,7 @@ function compareConfluenceAndExcel(confluenceItems, excelItems) {
 
     newInConfluence.push({
       title,
-      FrdId: frdId,
+      frdId: frdId,
       adoLinks: item.adoLinks || [],
       reason
     });
@@ -147,11 +191,11 @@ function printConfluenceDataAsCsv(confluenceItems) {
   }
 
   // Derive columns from the first item's keys.
-  // "title" becomes the "User Story id" column; "FrdId" is a duplicate alias of "FRD ID" so it is skipped.
-  const skipKeys = new Set(["title", "FrdId"]);
+  // "title" becomes "User Story id"; "frdId" becomes "FRD ID" — both are placed first explicitly.
+  const skipKeys = new Set(["title", "frdId"]);
   const firstItem = confluenceItems[0];
   const columnKeys = Object.keys(firstItem).filter(k => !skipKeys.has(k));
-  const headers = ["User Story id", ...columnKeys.map(k => (k === "adoLinks" ? "ADO Links" : k))];
+  const headers = ["User Story id", "FRD ID", ...columnKeys.map(k => (k === "adoLinks" ? "ADO Links" : k))];
 
   console.log("");
   console.log("Confluence data (CSV):");
@@ -159,11 +203,20 @@ function printConfluenceDataAsCsv(confluenceItems) {
 
   for (const item of confluenceItems) {
     const storyId = extractStoryPrefix(item.title);
+    const frdId = item.frdId ?? "";
     const rowValues = columnKeys.map(k => {
       const val = item[k];
-      return Array.isArray(val) ? val.join("; ") : (val ?? "");
+      if (Array.isArray(val)) {
+        return val.map(entry => {
+          if (typeof entry === "object" && entry !== null) {
+            return entry.status ? `${entry.link} [${entry.status}]` : (entry.link ?? "");
+          }
+          return String(entry);
+        }).join("; ");
+      }
+      return val ?? "";
     });
-    console.log([storyId, ...rowValues].map(escapeCsvValue).join(","));
+    console.log([storyId, frdId, ...rowValues].map(escapeCsvValue).join(","));
   }
 }
 
@@ -195,6 +248,7 @@ function printComparisonResults(comparisonResults) {
 
     await loadDataFromConfluence(config);
     dataFromConfluence.splice(0, dataFromConfluence.length, ...dataFromConfluence.filter(item => !hasNoKeyData(item)));
+    await enrichAdoLinks(dataFromConfluence, config);
     loadDataFromExcel(config);
 
     printDataStructure("dataFromConfluence", dataFromConfluence);

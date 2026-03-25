@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
 const TurndownService = require("turndown");
-const { loadConfig } = require("./config");
-const { createClient } = require("./confluenceClient");
+const { loadConfig } = require("../config/config");
+const { createClient } = require("../dataload/confluenceClient");
 
 function parseCliOverrides(argv) {
   const overrides = {};

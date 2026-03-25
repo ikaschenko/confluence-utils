@@ -25,7 +25,7 @@ function loadLocalConfig() {
   } catch (error) {
     if (error.code === "MODULE_NOT_FOUND" && error.message.includes("config.local")) {
       return {
-        config: require("../config/config.example"),
+        config: require("./config.example"),
         localFileFound: false
       };
     }
