@@ -82,8 +82,16 @@ function addNormalizedAliases(extractedValues) {
 
 async function crawl(parentId) {
   const children = await client.getChildPages(parentId);
+  const pagesToIgnore = config.confluencePagesToIgnore
+    ? config.confluencePagesToIgnore.split(",").map(id => id.trim()).filter(Boolean)
+    : [];
 
   for (const page of children) {
+    if (pagesToIgnore.includes(String(page.id))) {
+      console.log("Checking sub-page: [SKIPPED]", page.title);
+      continue;
+    }
+
     console.log("Checking sub-page:", page.title);
 
     const html = await client.getPageContent(page.id);

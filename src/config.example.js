@@ -1,6 +1,7 @@
 module.exports = {
   baseUrl: "",
   confluencePageId: "",
+  confluencePagesToIgnore: "", // optional: comma-separated page IDs to skip (page and all its children)
   apiToken: "",
   email: "",
   excelFilePath: "",
