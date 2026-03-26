@@ -1,5 +1,5 @@
-const { loadConfig } = require("../config/config");
-const { createAdoClient } = require("../dataload/dataLoadingADO");
+const { loadConfig } = require("./config/configValidation");
+const { createAdoClient } = require("./dataload/dataLoadingADO");
 
 // Sample ADO work-item URLs to test with (replace with real links).
 const TEST_ADO_LINKS = [

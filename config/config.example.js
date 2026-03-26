@@ -11,6 +11,10 @@ module.exports = {
   adoOrg: "",
   adoPat: "", // Azure DevOps personal access token
   normLen: 50,
+  printDataFromExcel: false,        // optional: print raw Excel data
+  printDataFromConfluence: false,    // optional: print raw Confluence data
+  printConfluenceDataAsCsv: true,    // optional: print Confluence data as CSV
+  printAlreadyInExcel: false,        // optional: print items already matched in Excel
   extractRules: [
     {
       name: "",

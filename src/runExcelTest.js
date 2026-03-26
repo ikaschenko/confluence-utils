@@ -1,5 +1,5 @@
-const { loadConfig } = require("./config");
-const { dataFromExcel, loadDataFromExcel } = require("./dataLoadingExcel");
+const { loadConfig } = require("./config/configValidation");
+const { dataFromExcel, loadDataFromExcel } = require("./dataload/dataLoadingExcel");
 
 try {
 	const config = loadConfig();

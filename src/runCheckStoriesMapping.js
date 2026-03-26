@@ -1,8 +1,8 @@
 const fs = require("fs");
-const { loadConfig } = require("../config/config");
-const { dataFromConfluence, loadDataFromConfluence } = require("../dataload/dataLoadingConfluence");
-const { dataFromExcel, loadDataFromExcel } = require("../dataload/dataLoadingExcel");
-const { createAdoClient } = require("../dataload/dataLoadingADO");
+const { loadConfig } = require("./config/configValidation");
+const { dataFromConfluence, loadDataFromConfluence } = require("./dataload/dataLoadingConfluence");
+const { dataFromExcel, loadDataFromExcel } = require("./dataload/dataLoadingExcel");
+const { createAdoClient } = require("./dataload/dataLoadingADO");
 
 function ensureExcelFileIsReadable(excelFilePath) {
   try {
@@ -226,11 +226,13 @@ function printDataStructure(title, data) {
   console.dir(data, { depth: null });
 }
 
-function printComparisonResults(comparisonResults) {
-  printDataStructure(
-    `Already added in Excel (${comparisonResults.alreadyAddedInExcel.length})`,
-    comparisonResults.alreadyAddedInExcel
-  );
+function printComparisonResults(comparisonResults, config) {
+  if (config.printAlreadyInExcel) {
+    printDataStructure(
+      `Already added in Excel (${comparisonResults.alreadyAddedInExcel.length})`,
+      comparisonResults.alreadyAddedInExcel
+    );
+  }
 
   printDataStructure(
     `New in Confluence, not yet mentioned in Excel (${comparisonResults.newInConfluence.length})`,
@@ -251,11 +253,17 @@ function printComparisonResults(comparisonResults) {
     await enrichAdoLinks(dataFromConfluence, config);
     loadDataFromExcel(config);
 
-    printDataStructure("dataFromConfluence", dataFromConfluence);
-    printConfluenceDataAsCsv(dataFromConfluence);
-    printDataStructure("dataFromExcel", dataFromExcel);
+    if (config.printDataFromConfluence) {
+      printDataStructure("dataFromConfluence", dataFromConfluence);
+    }
+    if (config.printConfluenceDataAsCsv !== false) {
+      printConfluenceDataAsCsv(dataFromConfluence);
+    }
+    if (config.printDataFromExcel) {
+      printDataStructure("dataFromExcel", dataFromExcel);
+    }
 
-    printComparisonResults(compareConfluenceAndExcel(dataFromConfluence, dataFromExcel));
+    printComparisonResults(compareConfluenceAndExcel(dataFromConfluence, dataFromExcel), config);
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

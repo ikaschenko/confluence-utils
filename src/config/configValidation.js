@@ -19,13 +19,13 @@ const ADO_REQUIRED_FIELDS = [
 function loadLocalConfig() {
   try {
     return {
-      config: require("./config.local"),
+      config: require("../../config/config.local"),
       localFileFound: true
     };
   } catch (error) {
     if (error.code === "MODULE_NOT_FOUND" && error.message.includes("config.local")) {
       return {
-        config: require("./config.example"),
+        config: require("../../config/config.example"),
         localFileFound: false
       };
     }
